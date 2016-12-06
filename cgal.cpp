@@ -95,6 +95,8 @@ char noErrorCigar[500], noErrorMD[500];
 ///edited
 void writeInfoToFile(vector<info> multiMap);
 void writeBsToFile(vector<bs> &bsCollection, int count);
+void createBs(long int pos, char* readString, char* cigar, vector<bs> &B);
+void createInfo(double errorProb1, long int pos1, char* contigField1, char* readString1, vector<info> &M);
 void initInsertCounts(int max)
 {
     maxInsertSize=max;
@@ -1001,32 +1003,13 @@ double computeLikelihood(const char *file)
             sum+=prob;
             //cout<<prob<<endl;
             ///need to add code here
-            info temp1,temp2;
-            temp1.prob = errorProb1;
-            temp1.pos = pos1;
-            temp1.contigField = contigField1;
-            temp1.readLen = strlen(readString1);
 
-            temp2.prob = errorProb2;
-            temp2.pos = pos2;
-            temp2.contigField = contigField2;
-            temp2.readLen = strlen(readString2);
+            createBs(pos1, readString1, cigar1, bsCollection1);
+            createBs(pos2, readString2, cigar2, bsCollection2);
 
+            createInfo(errorProb1, pos1, contigField1, readString1, multiMapProb1);
+            createInfo(errorProb2, pos2, contigField2, readString2, multiMapProb2);
 
-            bs bstemp1,bstemp2;
-            bstemp1.pos = pos1;
-            bstemp1.read = readString1;
-            bstemp1.cigar = cigar1;
-
-            bstemp2.pos = pos2;
-            bstemp2.read = readString2;
-            bstemp2.cigar = cigar2;
-
-            bsCollection1.push_back(bstemp1);
-            bsCollection2.push_back(bstemp2);
-
-            multiMapProb1.push_back(temp1);
-            multiMapProb2.push_back(temp2);
         }
         else if(strcmp("*",preqname1)!=0 && strcmp("*",preqname2)!=0)
         {
@@ -1047,62 +1030,26 @@ double computeLikelihood(const char *file)
             bsCollection1.clear();
             bsCollection2.clear();
             ///edited
-            info temp1,temp2;
-            temp1.prob = errorProb1;
-            temp1.pos = pos1;
-            temp1.contigField = contigField1;
-            temp1.readLen = strlen(readString1);
 
-            temp2.prob = errorProb2;
-            temp2.pos = pos2;
-            temp2.contigField = contigField2;
-            temp2.readLen = strlen(readString2);
+            createInfo(errorProb1, pos1, contigField1, readString1, multiMapProb1);
+            createInfo(errorProb2, pos2, contigField2, readString2, multiMapProb2);
 
-            multiMapProb1.push_back(temp1);
-            multiMapProb2.push_back(temp2);
+            createBs(pos1, readString1, cigar1, bsCollection1);
+            createBs(pos2, readString2, cigar2, bsCollection2);
 
-            bs bstemp1,bstemp2;
-            bstemp1.pos = pos1;
-            bstemp1.read = readString1;
-            bstemp1.cigar = cigar1;
-
-            bstemp2.pos = pos2;
-            bstemp2.read = readString2;
-            bstemp2.cigar = cigar2;
-
-            bsCollection1.push_back(bstemp1);
-            bsCollection2.push_back(bstemp2);
 
             sum=prob;
         }
         else
         {
             sum=prob;
-           info temp1,temp2;
-            temp1.prob = errorProb1;
-            temp1.pos = pos1;
-            temp1.contigField = contigField1;
-            temp1.readLen = strlen(readString1);
 
-            temp2.prob = errorProb2;
-            temp2.pos = pos2;
-            temp2.contigField = contigField2;
-            temp2.readLen = strlen(readString2);
+            createInfo(errorProb1, pos1, contigField1, readString1, multiMapProb1);
+            createInfo(errorProb2, pos2, contigField2, readString2, multiMapProb2);
 
-            multiMapProb1.push_back(temp1);
-            multiMapProb2.push_back(temp2);
+            createBs(pos1, readString1, cigar1, bsCollection1);
+            createBs(pos2, readString2, cigar2, bsCollection2);
 
-            bs bstemp1,bstemp2;
-            bstemp1.pos = pos1;
-            bstemp1.read = readString1;
-            bstemp1.cigar = cigar1;
-
-            bstemp2.pos = pos2;
-            bstemp2.read = readString2;
-            bstemp2.cigar = cigar2;
-
-            bsCollection1.push_back(bstemp1);
-            bsCollection2.push_back(bstemp2);
         }
 
         strcpy(preqname1,qname1);
@@ -1185,6 +1132,25 @@ void writeInfoToFile(vector<info> multiMap)
 
 
 
+}
+
+void createBs(long int pos, char* readString, char* cigar, vector<bs> &B)
+{
+    bs bstemp1;
+    bstemp1.pos = pos;
+    bstemp1.read = readString;
+    bstemp1.cigar = cigar;
+    B.push_back(bstemp1);
+}
+
+void createInfo(double errorProb1, long int pos1, char* contigField1, char* readString1, vector<info> &M)
+{
+    info temp1;
+    temp1.prob = errorProb1;
+    temp1.pos = pos1;
+    temp1.contigField = contigField1;
+    temp1.readLen = strlen(readString1);
+    M.push_back(temp1);
 }
 
 void writeBsToFile(vector<bs> &bsCollection, int count)
