@@ -1,3 +1,4 @@
+#include<bits/stdc++.h>
 #include <iostream>
 #include<fstream>
 #include <string>
@@ -22,6 +23,13 @@ typedef struct information
     long int readLen;
     char* conName;
 } info;
+
+typedef struct buildString
+{
+    long int pos;
+    string cigar;
+    string read;
+} bs;
 
 
 
@@ -86,6 +94,7 @@ char tempCigar[500], tempMD[500];
 char noErrorCigar[500], noErrorMD[500];
 ///edited
 void writeInfoToFile(vector<info> multiMap);
+void writeBsToFile(vector<bs> &bsCollection, int count);
 void initInsertCounts(int max)
 {
     maxInsertSize=max;
@@ -864,7 +873,8 @@ double computeLikelihood(const char *file)
 
 
     vector<info> multiMapProb1, multiMapProb2;
-
+    vector<bs> bsCollection1,bsCollection2;
+    int fileCount=0;
 
     int it=0;
 
@@ -893,7 +903,7 @@ double computeLikelihood(const char *file)
 
 
         cigar1=strtok(NULL,"\t");///cigar string
-
+        //cout<<cigar1<<endl;
 
         temp=strtok(NULL,"\t");
 
@@ -932,7 +942,7 @@ double computeLikelihood(const char *file)
 
 
         cigar2=strtok(NULL,"\t");
-
+        //cout<<cigar2<<endl;
 
         temp=strtok(NULL,"\t");
 
@@ -1002,6 +1012,19 @@ double computeLikelihood(const char *file)
             temp2.contigField = contigField2;
             temp2.readLen = strlen(readString2);
 
+
+            bs bstemp1,bstemp2;
+            bstemp1.pos = pos1;
+            bstemp1.read = readString1;
+            bstemp1.cigar = cigar1;
+
+            bstemp2.pos = pos2;
+            bstemp2.read = readString2;
+            bstemp2.cigar = cigar2;
+
+            bsCollection1.push_back(bstemp1);
+            bsCollection2.push_back(bstemp2);
+
             multiMapProb1.push_back(temp1);
             multiMapProb2.push_back(temp2);
         }
@@ -1015,9 +1038,14 @@ double computeLikelihood(const char *file)
             ///edited
             writeInfoToFile(multiMapProb1);
             writeInfoToFile(multiMapProb2);
+            if(bsCollection1.size()>10)
+                writeBsToFile(bsCollection1,fileCount++);
             it++;
             multiMapProb1.clear();
             multiMapProb2.clear();
+
+            bsCollection1.clear();
+            bsCollection2.clear();
             ///edited
             info temp1,temp2;
             temp1.prob = errorProb1;
@@ -1032,6 +1060,19 @@ double computeLikelihood(const char *file)
 
             multiMapProb1.push_back(temp1);
             multiMapProb2.push_back(temp2);
+
+            bs bstemp1,bstemp2;
+            bstemp1.pos = pos1;
+            bstemp1.read = readString1;
+            bstemp1.cigar = cigar1;
+
+            bstemp2.pos = pos2;
+            bstemp2.read = readString2;
+            bstemp2.cigar = cigar2;
+
+            bsCollection1.push_back(bstemp1);
+            bsCollection2.push_back(bstemp2);
+
             sum=prob;
         }
         else
@@ -1050,6 +1091,18 @@ double computeLikelihood(const char *file)
 
             multiMapProb1.push_back(temp1);
             multiMapProb2.push_back(temp2);
+
+            bs bstemp1,bstemp2;
+            bstemp1.pos = pos1;
+            bstemp1.read = readString1;
+            bstemp1.cigar = cigar1;
+
+            bstemp2.pos = pos2;
+            bstemp2.read = readString2;
+            bstemp2.cigar = cigar2;
+
+            bsCollection1.push_back(bstemp1);
+            bsCollection2.push_back(bstemp2);
         }
 
         strcpy(preqname1,qname1);
@@ -1132,6 +1185,28 @@ void writeInfoToFile(vector<info> multiMap)
 
 
 
+}
+
+void writeBsToFile(vector<bs> &bsCollection, int count)
+{
+    if(count<10){
+        string s = "bsFolder2/bsOutput_";
+        string t = ".txt";
+        stringstream oss;
+        oss<< s<<count<<t;
+        cout<<oss.str()<<endl;
+        //FILE *fp;
+        //fp = fopen(oss.str().c_str(),"w");
+        ofstream bsFile(oss.str().c_str());
+        for(int i=0;i<bsCollection.size();i++)
+        {
+            bs b = bsCollection[i];
+            bsFile <<b.pos<<" "<< b.cigar<<" "<<b.read<<endl;
+            //fprintf(fp,"%ld %s %s\n",b.pos,b.cigar,b.read);
+        }
+        //fclose(fp);
+        bsFile.close();
+    }
 }
 
 void printHelp()
