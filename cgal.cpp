@@ -14,6 +14,12 @@ using namespace std;
 #include "cgal.h"
 
 #define MAX_REC_LEN 1024
+  ///  edited  ///
+#define readSize 101
+typedef struct qEntry{
+    long long int pos;
+    double prob;
+}qE;
 
 typedef struct information
 {
@@ -31,7 +37,7 @@ typedef struct buildString
     string read;
 } bs;
 
-
+ /// edited  ///
 
 int noContigs=0;
 int noReads=0;
@@ -97,6 +103,8 @@ void writeInfoToFile(vector<info> multiMap);
 void writeBsToFile(vector<bs> &bsCollection, int count);
 void createBs(long int pos, char* readString, char* cigar, vector<bs> &B);
 void createInfo(double errorProb1, long int pos1, char* contigField1, char* readString1, vector<info> &M);
+void unixSort();
+void calculateProbability();
 void initInsertCounts(int max)
 {
     maxInsertSize=max;
@@ -1029,7 +1037,7 @@ double computeLikelihood(const char *file)
 
             bsCollection1.clear();
             bsCollection2.clear();
-            ///edited
+
 
             createInfo(errorProb1, pos1, contigField1, readString1, multiMapProb1);
             createInfo(errorProb2, pos2, contigField2, readString2, multiMapProb2);
@@ -1037,7 +1045,7 @@ double computeLikelihood(const char *file)
             createBs(pos1, readString1, cigar1, bsCollection1);
             createBs(pos2, readString2, cigar2, bsCollection2);
 
-
+            ///edited
             sum=prob;
         }
         else
@@ -1204,6 +1212,103 @@ void printHelp()
 
 }
 
+void unixSort()
+{
+    system("sort -n -k1,1 -k2,2 info.txt > infoOutput1.txt");
+}
+
+void calculateProbability()
+{
+
+    int lenIt = 0;
+    ifstream inFile("infoOutput1.txt");
+
+    qE q;
+    string contigName, temp;
+    int pos,contigLine=0;
+    int contig,t1,t2,prevContig=0,tempPos,curContig;
+    pair<bool,double> tempPair;
+    int loopNo=0;
+    while(!inFile.eof())
+    {
+
+        //cout<<prevContig<<"\t";
+        //string fileName="outCtg"+std::to_string(prevContig);
+        stringstream ss;
+        ss << "ProbFolder2/outCtg" << prevContig << ".txt";
+        ofstream outFile(ss.str().c_str());
+        map<int,pair<bool,double> >M;
+        if(prevContig>0)
+             M[tempPos] = tempPair;
+        while(inFile>>contig>>q.pos>>q.prob)
+        {
+            if(contig == prevContig)
+                M[q.pos] = make_pair(true, q.prob);
+            else
+            {
+                tempPair = make_pair(true,q.prob);
+                tempPos = q.pos;
+                curContig = prevContig;
+                prevContig = contig;
+                break;
+            }
+        }
+
+        if(curContig < noContigs)
+        {
+            /// loop for each contig c
+            double probability = 0.0;
+            ofstream probf("probtest.txt");
+            queue<qE> Q;
+            for(long int i=0;i<contigLengths[curContig];i++){
+                map<int,pair<bool, double> > :: iterator it = M.find(i);
+                if(it != M.end()){
+                    // map e ache
+                    double temp = fabs(log(it->second.second));
+                    //cout<<log(it->second.second)<<"\t"<<it->second.second<<endl;
+                    probability = probability + temp;
+                    probf<<probability<<"\t"<<log(it->second.second)<<endl;
+                    qE qe;
+                    qe.pos = i;
+                    qe.prob = it->second.second;
+
+                    Q.push(qe);
+
+                }
+                double p;;
+
+                if(!Q.empty()){
+                    int sz = (int) Q.size();
+                    p = probability/sz;
+                    p = (-1)*p;
+                }
+                else{
+                    p = (-1)*probability;
+                }
+
+                outFile<< i << " " << p <<" "<<Q.size()<< endl;
+                loopNo++;
+                if(!Q.empty()){
+                    qE qeTemp = Q.front();
+                    if( i - qeTemp.pos== (readSize-1)){
+                        Q.pop();
+
+                        probability -= fabs(log(qeTemp.prob));
+
+                        if(probability<-1E-320)
+                            probability=0;
+                    }
+                }
+            }
+
+        }
+        outFile.close();
+
+    }
+
+    inFile.close();
+    cout<<"LoopNo: "<<loopNo;
+}
 
 int main(int argc, char *argv[])
 {
@@ -1441,7 +1546,10 @@ int main(int argc, char *argv[])
 
 
     double val1=computeLikelihood(mapFileName);
+    /// edited ///
     infoFile.close();
+    unixSort();
+    calculateProbability();
 //	cout<<"after val 1"<<endl;
 
     double val2=0;//computeLikelihood("unmappedOut.sam");
