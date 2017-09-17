@@ -3,6 +3,39 @@
 static int countInfoFile=0;
 void printGlobalMapData();
 map<long int, vector<CR> > globalMap;
+map <int , vector<double> > mapOfProbListToPosition;
+int startCentralTendency = 232000;
+int endCentralTendency = 233000;
+
+void checkCentralTendency(deque <qE> Q2, int position) {
+
+
+    cout << "Here in the function " << endl;
+    vector <double> probList;
+    for(int i=0;i<Q2.size();i++){
+        probList.push_back(Q2[i].prob);
+    }
+    mapOfProbListToPosition[position] = probList;
+}
+void writeFileForCentralTendencyCheck(){
+    cout << "Here" << endl;
+    ofstream fileWriter ("centralTendencyCheck.txt");
+    map<int , vector<double> >:: iterator it;
+    for(it = mapOfProbListToPosition.begin(); it != mapOfProbListToPosition.end();it++ ){
+        vector <double> probList = it->second;
+        int position = it->first;
+        for(int i=0;i<probList.size();i++){
+
+            if(position >= startCentralTendency && position <= endCentralTendency){
+                fileWriter << position << probList[i] << endl;
+            }
+        }
+        fileWriter << "~~~~~~~~~~~~~~~" << endl;
+    }
+    fileWriter.close();
+
+}
+
 
 double computeLikelihood(const char *file)
 {
@@ -430,12 +463,13 @@ void calculateProbability()
             double probability = 0.0;
             ofstream probf("probtest.txt");
             queue<qE> Q;
+            deque <qE> deq;
             for(long int i=0;i<contigLengths[curContig];i++){
                 map<int,pair<bool, double> > :: iterator it = M.find(i);
                 if(it != M.end()){
                     // map e ache
                     double temp = fabs(log(it->second.second));
-                    //cout<<log(it->second.second)<<"\t"<<it->second.second<<endl;
+                    cout<<log(it->second.second)<<"\t"<<it->second.second<<endl;
                     probability = probability + temp;
                     probf<<probability<<"\t"<<log(it->second.second)<<endl;
                     qE qe;
@@ -443,12 +477,14 @@ void calculateProbability()
                     qe.prob = it->second.second;
 
                     Q.push(qe);
+                    deq.push_back(qe);
 
                 }
-                double p;;
+                double p;
 
                 if(!Q.empty()){
                     int sz = (int) Q.size();
+                    checkCentralTendency(deq, i);
                     p = probability/sz;
                     p = (-1)*p;
                 }
@@ -462,13 +498,17 @@ void calculateProbability()
                     qE qeTemp = Q.front();
                     if( i - qeTemp.pos== (readSize-1)){
                         Q.pop();
-
+                        deq.pop_front();
                         probability -= fabs(log(qeTemp.prob));
 
                         if(probability<-1E-320)
                             probability=0;
                     }
                 }
+            }
+            if(curContig == 178)
+            {
+                writeFileForCentralTendencyCheck();
             }
 
         }
@@ -717,6 +757,7 @@ int main(int argc, char *argv[])
 
     double val1=computeLikelihood(mapFileName);
     /// edited ///
+    cout << "balchal" << endl;
     infoFile.close();
     unixSort();
     calculateProbability();
